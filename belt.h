@@ -12,7 +12,7 @@
 #define BELT_H_
 
 #include <stddef.h>
-// #include <openssl/ossl_typ.h>
+#include <openssl/objects.h>
 #include <openssl/evp.h>
 
 #define BELT_DGST_NID 51

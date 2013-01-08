@@ -5,9 +5,7 @@
  *      Author: mihas
  */
 
-
 #include "belt.h"
-
 
 //TODO:: what this is means?
 
@@ -23,7 +21,7 @@ static int belt_digest_copy(EVP_MD_CTX *to, const EVP_MD_CTX *from);
 static int belt_digest_cleanup(EVP_MD_CTX *ctx);
 
 EVP_MD belt_md = {
-	BELT_DGST_TYPE,
+	NID_undef,
 	BELT_DGST_PKEY_TYPE,
 	BELT_DGST_SIZE,
 	BELT_DGST_FLAGS,
