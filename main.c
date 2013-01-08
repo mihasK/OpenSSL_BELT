@@ -30,7 +30,7 @@ static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher, const int ** nid
 
 static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md, const int ** nids, int nid) {
 	if(evp_md == NULL) {
-		//TODO:: original nid (see obj_dat.c & .h)
+		//TODO:: original nid (see obj_dat.c & .h) EVP_add_digest_alias - ????
 		int belt_nids[] = {BELT_DGST_NID};
 		*nids=belt_nids;
 		return 1;
@@ -46,6 +46,9 @@ static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md, const int ** nid
 
 static void add() {
 	EVP_add_digest(&belt_md);
+}
+int io(){
+
 }
 
 static int bind_belt(ENGINE * e, const char *id)

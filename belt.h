@@ -12,12 +12,13 @@
 #define BELT_H_
 
 #include <stddef.h>
-#include <openssl/ossl_typ.h>
+// #include <openssl/ossl_typ.h>
 #include <openssl/evp.h>
 
 #define BELT_DGST_NID 51
 
 extern EVP_MD belt_md;
 
+//int bind_belt(ENGINE * e, const char *id);
 
 #endif /* BELT_H_ */
