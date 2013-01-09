@@ -18,6 +18,7 @@
 #define BELT_DGST_NID 51
 
 extern EVP_MD belt_md;
+extern EVP_CIPHER belt_cipher_cnt;
 
 //int bind_belt(ENGINE * e, const char *id);
 

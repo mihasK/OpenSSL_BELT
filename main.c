@@ -17,6 +17,7 @@ static const char *engine_belt_id = "belt";
 static const char *engine_belt_name = "BELT engine";
 
 static int belt_digest_nids[] = { NID_undef, 0 };
+static int belt_cipher_nids[] = { NID_undef, 0 };
 
 #define REGISTER_NID(var,alg) tmpnid=OBJ_ln2nid(LN_ ## alg);\
 	var = (tmpnid == NID_undef)?\
@@ -25,24 +26,25 @@ static int belt_digest_nids[] = { NID_undef, 0 };
 
 static int register_belt_NIDs() {
 	int tmpnid; /* Used by REGISTER_NID macro */
-	REGISTER_NID(belt_digest_nids[0], md_belt)
+	REGISTER_NID(belt_digest_nids[0], belt_md)
+	REGISTER_NID(belt_cipher_nids[0], belt_cipher_cnt)
 	return 1;
 
 err:
 	belt_digest_nids[0] = NID_undef;
+	belt_cipher_nids[0] = NID_undef;
 	return 0;
 }
 
 static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher,
 		const int ** nids, int nid) {
 	if (cipher == NULL ) {
-		//TODO:: original nid (see obj_dat.c & .h)
-		int belt_nids[] = { 301 };
-		*nids = belt_nids;
+		*nids = belt_cipher_nids;
 		return 1;
-	} else {
+	}
+	if (nid == belt_cipher_nids[0]) {
 		//TODO:: implement ciphers
-		*cipher = NULL;
+		*cipher = &belt_cipher_cnt;
 		return 1;
 	}
 
@@ -52,12 +54,11 @@ static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher,
 static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md,
 		const int ** nids, int nid) {
 	if (evp_md == NULL ) {
-
 		*nids = belt_digest_nids;
 		return 1;
 	}
 	if (nid == belt_digest_nids[0]) {
-		//TODO:: implement ciphers
+		//TODO:: implement digest
 		*evp_md = &belt_md;
 		return 1;
 	}
@@ -68,7 +69,9 @@ static int add() {
 	if (!EVP_add_digest(&belt_md)) {
 		return 0;
 	}
-
+	if (!EVP_add_cipher(&belt_cipher_cnt)) {
+		return 0;
+	}
 	return 1;
 }
 
@@ -85,6 +88,7 @@ static int bind_belt(ENGINE * e, const char *id) {
 
 	// Set up NIDs
 	belt_md.type = belt_digest_nids[0];
+	belt_cipher_cnt.nid = belt_cipher_nids[0];
 
 	if (!ENGINE_set_id(e, engine_belt_id)) {
 		printf("ENGINE_set_id failed\n");
