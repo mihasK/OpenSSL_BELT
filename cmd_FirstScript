@@ -1,0 +1,3 @@
+engine -c
+dgst -belt_md file.dat
+enc -belt-cnt -in file.dat
