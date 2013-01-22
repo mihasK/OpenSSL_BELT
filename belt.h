@@ -14,11 +14,13 @@
 #include <stddef.h>
 #include <openssl/objects.h>
 #include <openssl/evp.h>
+#include "../bee2/belt.h"
+#include "../bee2/mem.h"
 
 #define BELT_DGST_NID 51
 
 extern EVP_MD belt_md;
-extern EVP_CIPHER belt_cipher_cnt;
+extern EVP_CIPHER belt_cipher_ctr;
 
 //int bind_belt(ENGINE * e, const char *id);
 

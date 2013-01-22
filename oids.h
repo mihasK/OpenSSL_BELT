@@ -16,8 +16,8 @@
 #define LN_belt_md "HBELT digest algorithm"
 
 // Defines description of BELT symmetric cipher in counter mode
-#define OID_belt_cipher_cnt "1.2.653.2.2.10"
-#define SN_belt_cipher_cnt "belt-cnt"
-#define LN_belt_cipher_cnt "BELT symmetric cipher in counter mode"
+#define OID_belt_cipher_ctr "1.2.653.2.2.10"
+#define SN_belt_cipher_ctr "belt-ctr"
+#define LN_belt_cipher_ctr "BELT symmetric cipher in counter mode"
 
 #endif /* BELT_OIDS_H_ */

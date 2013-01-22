@@ -27,7 +27,7 @@ static int belt_cipher_nids[] = { NID_undef, 0 };
 static int register_belt_NIDs() {
 	int tmpnid; /* Used by REGISTER_NID macro */
 	REGISTER_NID(belt_digest_nids[0], belt_md)
-	REGISTER_NID(belt_cipher_nids[0], belt_cipher_cnt)
+	REGISTER_NID(belt_cipher_nids[0], belt_cipher_ctr)
 	return 1;
 
 err:
@@ -44,7 +44,7 @@ static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher,
 	}
 	if (nid == belt_cipher_nids[0]) {
 		//TODO:: implement ciphers
-		*cipher = &belt_cipher_cnt;
+		*cipher = &belt_cipher_ctr;
 		return 1;
 	}
 
@@ -69,7 +69,7 @@ static int add() {
 	if (!EVP_add_digest(&belt_md)) {
 		return 0;
 	}
-	if (!EVP_add_cipher(&belt_cipher_cnt)) {
+	if (!EVP_add_cipher(&belt_cipher_ctr)) {
 		return 0;
 	}
 	return 1;
@@ -88,7 +88,9 @@ static int bind_belt(ENGINE * e, const char *id) {
 
 	// Set up NIDs
 	belt_md.type = belt_digest_nids[0];
-	belt_cipher_cnt.nid = belt_cipher_nids[0];
+	belt_cipher_ctr.nid = belt_cipher_nids[0];
+
+	belt_cipher_ctr.ctx_size = beltCTRStackDeep();
 
 	if (!ENGINE_set_id(e, engine_belt_id)) {
 		printf("ENGINE_set_id failed\n");
