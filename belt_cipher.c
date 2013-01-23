@@ -23,7 +23,7 @@ EVP_CIPHER belt_cipher_ctr = {
 	BELT_CIPHER_KEY_SIZE, /*key_size*/
 	BELT_CIPHER_IV_SIZE, /*iv_len */
 	EVP_CIPH_CTR_MODE | EVP_CIPH_NO_PADDING |
-		EVP_CIPH_CUSTOM_IV | EVP_CIPH_ALWAYS_CALL_INIT,
+		EVP_CIPH_CUSTOM_IV /*| EVP_CIPH_ALWAYS_CALL_INIT*/,
 	belt_cipher_init_ctr, /* init key */
 	belt_cipher_do_ctr, /* encrypt/decrypt data */
 	belt_cipher_cleanup_ctr, /* cleanup ctx */
