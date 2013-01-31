@@ -86,10 +86,11 @@ static int bind_belt(ENGINE * e, const char *id) {
 		return 0;
 	}
 
-	// Set up NIDs
+	// Set up NIDs and context-sizes
 	belt_md.type = belt_digest_nids[0];
-	belt_cipher_ctr.nid = belt_cipher_nids[0];
+	belt_md.ctx_size = beltHashStackDeep();
 
+	belt_cipher_ctr.nid = belt_cipher_nids[0];
 	belt_cipher_ctr.ctx_size = beltCTRStackDeep();
 
 	if (!ENGINE_set_id(e, engine_belt_id)) {
