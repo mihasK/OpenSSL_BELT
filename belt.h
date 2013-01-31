@@ -14,8 +14,8 @@
 #include <stddef.h>
 #include <openssl/objects.h>
 #include <openssl/evp.h>
-#include "../bee2/belt.h"
-#include "../bee2/mem.h"
+#include <bee2/belt.h>
+#include <bee2/mem.h>
 
 #define BELT_DGST_NID 51
 
