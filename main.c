@@ -16,7 +16,7 @@
 static const char *engine_belt_id = "belt";
 static const char *engine_belt_name = "BELT engine";
 
-static int belt_digest_nids[] = { NID_undef, 0 };
+static int belt_digest_nids[] = { NID_undef, NID_undef, 0 };
 static int belt_cipher_nids[] = { NID_undef, 0 };
 
 #define REGISTER_NID(var,alg) tmpnid=OBJ_ln2nid(LN_ ## alg);\
@@ -27,23 +27,24 @@ static int belt_cipher_nids[] = { NID_undef, 0 };
 static int register_belt_NIDs() {
 	int tmpnid; /* Used by REGISTER_NID macro */
 	REGISTER_NID(belt_digest_nids[0], belt_md)
+	REGISTER_NID(belt_digest_nids[1], belt_mac)
 	REGISTER_NID(belt_cipher_nids[0], belt_cipher_ctr)
 	return 1;
 
 err:
 	belt_digest_nids[0] = NID_undef;
+	belt_digest_nids[1] = NID_undef;
 	belt_cipher_nids[0] = NID_undef;
 	return 0;
 }
 
 static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher,
 		const int ** nids, int nid) {
-	if (cipher == NULL ) {
+	if (cipher == NULL) {
 		*nids = belt_cipher_nids;
 		return 1;
 	}
 	if (nid == belt_cipher_nids[0]) {
-		//TODO:: implement ciphers
 		*cipher = &belt_cipher_ctr;
 		return 1;
 	}
@@ -53,13 +54,15 @@ static int belt_ciphers(ENGINE * e, const EVP_CIPHER ** cipher,
 
 static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md,
 		const int ** nids, int nid) {
-	if (evp_md == NULL ) {
+	if (evp_md == NULL) {
 		*nids = belt_digest_nids;
-		return 1;
+		return 2;
 	}
 	if (nid == belt_digest_nids[0]) {
-		//TODO:: implement digest
 		*evp_md = &belt_md;
+		return 1;
+	} else if (nid == belt_digest_nids[1]) {
+		*evp_md = &belt_imit;
 		return 1;
 	}
 	return 0;
@@ -67,6 +70,9 @@ static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md,
 
 static int add() {
 	if (!EVP_add_digest(&belt_md)) {
+		return 0;
+	}
+	if (!EVP_add_digest(&belt_imit)) {
 		return 0;
 	}
 	if (!EVP_add_cipher(&belt_cipher_ctr)) {
@@ -89,6 +95,9 @@ static int bind_belt(ENGINE * e, const char *id) {
 	// Set up NIDs and context-sizes
 	belt_md.type = belt_digest_nids[0];
 	belt_md.ctx_size = beltHashStackDeep();
+
+	belt_imit.type = belt_digest_nids[1];
+	belt_imit.ctx_size = beltMACStackDeep();
 
 	belt_cipher_ctr.nid = belt_cipher_nids[0];
 	belt_cipher_ctr.ctx_size = beltCTRStackDeep();

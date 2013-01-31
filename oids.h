@@ -20,4 +20,9 @@
 #define SN_belt_cipher_ctr "belt-ctr"
 #define LN_belt_cipher_ctr "BELT symmetric cipher in counter mode"
 
+// Defines description of BELT symmetric cipher in MAC mode
+#define OID_belt_mac "1.2.653.2.2.11"
+#define SN_belt_mac "belt-mac"
+#define LN_belt_mac "BELT MAC"
+
 #endif /* BELT_OIDS_H_ */
