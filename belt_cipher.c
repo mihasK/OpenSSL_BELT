@@ -8,7 +8,6 @@
 #include "belt.h"
 
 #define BELT_CIPHER_CTR_BLOCK_SIZE 1
-#define BELT_CIPHER_KEY_SIZE 32
 #define BELT_CIPHER_IV_SIZE 16
 
 static int belt_cipher_do_ctr(EVP_CIPHER_CTX *ctx, unsigned char *out,

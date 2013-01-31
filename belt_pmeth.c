@@ -7,6 +7,12 @@
 
 #include "belt.h"
 
+struct belt_mac_pmeth_data {
+	int key_set;
+	EVP_MD *md;
+	unsigned char key[BELT_CIPHER_KEY_SIZE];
+};
+
 EVP_PKEY_METHOD belt_pmeth_mac = {
 
 	NID_undef,
