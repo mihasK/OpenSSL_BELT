@@ -34,6 +34,42 @@ EVP_CIPHER belt_cipher_ctr = {
 	NULL  /* application data */
 };
 
+/* Implementation of BELT in MAC (imitovstavka) mode */
+
+#define BELT_IMIT_BLOCK_SIZE 16
+#define BELT_IMIT_RESULT_SIZE 8
+
+/* Init functions which set specific parameters */
+static int belt_imit_init(EVP_MD_CTX *ctx);
+/* process block of data */
+static int belt_imit_update(EVP_MD_CTX *ctx, const void *data, size_t count);
+/* Return computed value */
+static int belt_imit_final(EVP_MD_CTX *ctx, unsigned char *md);
+/* Copies context */
+static int belt_imit_copy(EVP_MD_CTX *to, const EVP_MD_CTX *from);
+static int belt_imit_cleanup(EVP_MD_CTX *ctx);
+/* Control function, knows how to set MAC key.*/
+static int belt_imit_ctrl(EVP_MD_CTX *ctx, int type, int arg, void *ptr);
+
+EVP_MD belt_imit = {
+	NID_undef,
+	NID_undef,
+	BELT_IMIT_RESULT_SIZE,
+	0,
+	belt_imit_init,
+	belt_imit_update,
+	belt_imit_final,
+	belt_imit_copy,
+	belt_imit_cleanup,
+	NULL,
+	NULL,
+	{0,0,0,0,0},
+	BELT_IMIT_BLOCK_SIZE,
+	1, /* ctx_size (will be initialize in bind function) */
+	belt_imit_ctrl
+};
+
+
 static int belt_cipher_do_ctr(EVP_CIPHER_CTX *ctx, unsigned char *out,
 		const unsigned char *in, unsigned int inl) {
 	memCopy(out, in, inl);
@@ -54,5 +90,35 @@ static int belt_cipher_init_ctr(EVP_CIPHER_CTX *ctx, const unsigned char *key,
 /* Cleaning up of EVP_CIPHER_CTX */
 static int belt_cipher_cleanup_ctr(EVP_CIPHER_CTX *ctx) {
 	memSetZero(ctx->cipher_data, beltCTRStackDeep());
+	return 1;
+}
+
+static int belt_imit_init(EVP_MD_CTX *ctx) {
+	// initialization will be done after setting key
+	return 1;
+}
+
+static int belt_imit_update(EVP_MD_CTX *ctx, const void *data, size_t count) {
+	beltMACStepA(data, count, ctx->md_data);
+	return 1;
+}
+
+static int belt_imit_final(EVP_MD_CTX *ctx, unsigned char *md) {
+	beltMACStepG(md, ctx->md_data);
+	return 1;
+}
+
+static int belt_imit_copy(EVP_MD_CTX *to, const EVP_MD_CTX *from) {
+	memCopy(to->md_data, from->md_data, beltMACStackDeep());
+	return 1;
+}
+
+static int belt_imit_cleanup(EVP_MD_CTX *ctx) {
+	// ctx->md_data has been already cleaned in belt_imit_final() method
+	return 1;
+}
+
+static int belt_imit_ctrl(EVP_MD_CTX *ctx, int type, int arg, void *ptr) {
+	// TODO: implement
 	return 1;
 }
