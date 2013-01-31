@@ -114,11 +114,24 @@ static int belt_imit_copy(EVP_MD_CTX *to, const EVP_MD_CTX *from) {
 }
 
 static int belt_imit_cleanup(EVP_MD_CTX *ctx) {
-	// ctx->md_data has been already cleaned in belt_imit_final() method
+	memSetZero(ctx->md_data, beltMACStackDeep());
 	return 1;
 }
 
 static int belt_imit_ctrl(EVP_MD_CTX *ctx, int type, int arg, void *ptr) {
-	// TODO: implement
-	return 1;
+	switch (type) {
+	case EVP_MD_CTRL_KEY_LEN:
+		*((unsigned int*) (ptr)) = BELT_CIPHER_KEY_SIZE;
+		return 1;
+	case EVP_MD_CTRL_SET_KEY:
+		if (arg != BELT_CIPHER_KEY_SIZE) {
+			// TODO: handle error
+			printf("Wrong key size");
+			return 0;
+		}
+		beltMACStart(ptr, arg, ctx->md_data);
+		return 1;
+	default:
+		return 0;
+	}
 }
