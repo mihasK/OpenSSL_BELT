@@ -36,7 +36,6 @@ EVP_CIPHER belt_cipher_ctr = {
 /* Implementation of BELT in MAC (imitovstavka) mode */
 
 #define BELT_IMIT_BLOCK_SIZE 16
-#define BELT_IMIT_RESULT_SIZE 8
 
 /* Init functions which set specific parameters */
 static int belt_imit_init(EVP_MD_CTX *ctx);

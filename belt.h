@@ -18,6 +18,7 @@
 #include <bee2/mem.h>
 
 #define BELT_CIPHER_KEY_SIZE 32
+#define BELT_IMIT_RESULT_SIZE 8
 
 // Ctrls to set Belt MAC key
 #define EVP_MD_CTRL_KEY_LEN (EVP_MD_CTRL_ALG_CTRL+3)
