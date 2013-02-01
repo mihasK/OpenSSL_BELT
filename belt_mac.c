@@ -6,10 +6,10 @@
  *      Author: mihas
  */
 
-#include "belt.h"
+#include "belt_mac.h"
 
 
-static int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
+int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 	{
 	struct belt_mac_pmeth_data *data =
 (struct belt_mac_pmeth_data*)EVP_PKEY_CTX_get_data(ctx);
@@ -23,7 +23,8 @@ static int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 			GOSTerr(GOST_F_PKEY_GOST_MAC_CTRL, GOST_R_INVALID_DIGEST_TYPE);
 			return 0;
 			}*/
-		data->md = (EVP_MD *)p2;
+			EVP_MD * pp = p2;
+		data->md = pp;
 		return 1;
 		}
 		break;
@@ -71,7 +72,7 @@ static int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 
 
 
-static int pkey_belt_mac_ctrl_str(EVP_PKEY_CTX *ctx,
+int pkey_belt_mac_ctrl_str(EVP_PKEY_CTX *ctx,
 	const char *type, const char *value)
 	{
 	if (!strcmp(type, "key"))

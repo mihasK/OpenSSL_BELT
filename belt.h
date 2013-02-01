@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <openssl/objects.h>
 #include <openssl/evp.h>
+#include <openssl/ossl_typ.h>
 #include <bee2/belt.h>
 #include <bee2/mem.h>
 
