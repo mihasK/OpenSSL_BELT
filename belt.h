@@ -26,6 +26,8 @@
 
 /* method registration */
 int register_pmeth_belt(int id, EVP_PKEY_METHOD **pmeth, int flags);
+int register_ameth_belt(int nid, EVP_PKEY_ASN1_METHOD **ameth,
+		const char* pemstr, const char* info);
 
 extern EVP_MD belt_md;
 extern EVP_MD belt_imit;
