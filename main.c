@@ -18,6 +18,9 @@ static const char *engine_belt_name = "BELT engine";
 
 static int belt_digest_nids[] = { NID_undef, NID_undef, 0 };
 static int belt_cipher_nids[] = { NID_undef, 0 };
+static int belt_pmeth_nids[] = { NID_undef, 0 };
+
+static EVP_PKEY_METHOD *belt_pmeth_mac = NULL;
 
 #define REGISTER_NID(var,alg) tmpnid=OBJ_ln2nid(LN_ ## alg);\
 	var = (tmpnid == NID_undef)?\
@@ -68,6 +71,22 @@ static int belt_digest(ENGINE * engine, const EVP_MD ** evp_md,
 	return 0;
 }
 
+static int belt_pkey_meths(ENGINE *e, EVP_PKEY_METHOD **pmeth, const int **nids,
+		int nid) {
+	if (!pmeth) {
+		*nids = belt_pmeth_nids;
+		return 1;
+	}
+
+	if (nid == belt_pmeth_nids[0]) {
+		*pmeth = belt_pmeth_mac;
+		return 1;
+	}
+
+	*pmeth = NULL;
+	return 0;
+}
+
 static int add() {
 	if (!EVP_add_digest(&belt_md)) {
 		return 0;
@@ -102,6 +121,9 @@ static int bind_belt(ENGINE * e, const char *id) {
 	belt_cipher_ctr.nid = belt_cipher_nids[0];
 	belt_cipher_ctr.ctx_size = beltCTRStackDeep();
 
+	// pkey method part of BELT MAC
+	belt_pmeth_nids[0] = belt_imit.type;
+
 	if (!ENGINE_set_id(e, engine_belt_id)) {
 		printf("ENGINE_set_id failed\n");
 		return 0;
@@ -120,13 +142,24 @@ static int bind_belt(ENGINE * e, const char *id) {
 		return 0;
 	}
 
+	if (!ENGINE_set_pkey_meths(e, belt_pkey_meths)) {
+		printf("ENGINE_set_pkey_meths failed\n");
+		return 0;
+	}
+
+	if (!register_pmeth_belt(belt_imit.type, &belt_pmeth_mac, 0)) {
+		printf("register_pmeth_belt for MAC failed\n");
+		return 0;
+	}
+
 	if (!add()) {
 		printf("Adding algorithms failed\n");
 		return 0;
 	}
 
-	//register algorithms
-	if (!ENGINE_register_ciphers(e) || !ENGINE_register_digests(e)) {
+	// register algorithms
+	if (!ENGINE_register_ciphers(e) || !ENGINE_register_digests(e) ||
+			!ENGINE_register_pkey_meths(e)) {
 		printf("ENGINE register fails\n");
 		return 0;
 	}
