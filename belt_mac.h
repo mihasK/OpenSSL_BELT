@@ -22,8 +22,8 @@ static int pkey_belt_mac_signctx_init(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx);
 static int pkey_belt_mac_signctx(EVP_PKEY_CTX *ctx, unsigned char *sig,
 		size_t *siglen, EVP_MD_CTX *mctx);
 
-int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2);
-int pkey_belt_mac_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
+static int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2);
+static int pkey_belt_mac_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
 		const char *value);
 
 
