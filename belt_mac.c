@@ -8,8 +8,8 @@
 
 #include "belt_mac.h"
 
-
-int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
+#ifdef __aaa__
+static int pkey_belt_mac_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 	{
 	struct belt_mac_pmeth_data *data =
 (struct belt_mac_pmeth_data*)EVP_PKEY_CTX_get_data(ctx);
@@ -105,3 +105,4 @@ int pkey_belt_mac_ctrl_str(EVP_PKEY_CTX *ctx,
 		*/
 	return -2;
 	}
+#endif

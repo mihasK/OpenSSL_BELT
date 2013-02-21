@@ -25,6 +25,11 @@
 #define EVP_MD_CTRL_KEY_LEN (EVP_MD_CTRL_ALG_CTRL+3)
 #define EVP_MD_CTRL_SET_KEY (EVP_MD_CTRL_ALG_CTRL+4)
 
+/* method registration */
+int register_pmeth_belt(int id, EVP_PKEY_METHOD **pmeth, int flags);
+int register_ameth_belt(int nid, EVP_PKEY_ASN1_METHOD **ameth,
+		const char* pemstr, const char* info);
+
 extern EVP_MD belt_md;
 extern EVP_MD belt_imit;
 extern EVP_CIPHER belt_cipher_ctr;
