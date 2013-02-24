@@ -113,50 +113,57 @@ static int pkey_bign_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
 	octet* priv_key, pub_key;//TODO mallocs
 	bignGenKeypair(priv_key, pub_key, params NULL, NULL);
 
-	DSA* dsa = DSA_new();
 
+	fillBignKeyToPKEY(params, priv_key, pub_key, pkey);
 
-	if (!pkey_gost94_paramgen(ctx,pkey)) return 0;
-	dsa = EVP_PKEY_get0(pkey);
-	gost_sign_keygen(dsa);
 	return 1;
 	}
 
-void int fillBignKeyToDSA(bign_params* params, octet* priv_key,octet* pub_key, DSA* dsa) {
+void fillBignKeyToPKEY(bign_params* params, octet* priv_key,octet* pub_key, EVP_PKEY *pkey) {
 	//TODO implement filling
+	//EVP_PKEY_assign(...
 }
-/* ----------- sign callbacks --------------------------------------*/
+
+void fillPKEYtoBignKey(bign_params* params, octet* priv_key,octet* pub_key, EVP_PKEY *pkey) {
+	//TODO implement filling
+	//vice versa
+}
+
+
 
 static int pkey_bign_sign(EVP_PKEY_CTX *ctx, unsigned char *sig, size_t *siglen,
 	const unsigned char *tbs, size_t tbs_len)
 	{
-	DSA_SIG *unpacked_sig=NULL;
-	EVP_PKEY *pkey = EVP_PKEY_CTX_get0_pkey(ctx);
+
+	EVP_PKEY *evp_pkey = EVP_PKEY_CTX_get0_pkey(ctx);
 	if (!siglen) return 0;
-	if (!sig)
-		{
-		*siglen= BIGN_SIGNATURE_SIZE; /* better to check size of pkey->pkey.dsa-q */
-		return 1;
-		}
-	unpacked_sig = bignSign()(tbs,tbs_len,EVP_PKEY_get0(pkey));
-	if (!unpacked_sig)
-		{
-		return 0;
-		}
-	return pack_sign_cp(unpacked_sig,32,sig,siglen);
+
+	bign_params* params;
+	octet* priv_key, pub_key;//TODO maloc
+	fillPKEYtoBignKey(params, priv_key, pub_key, evp_pkey);
+
+	octet* sign;//TODO maloc
+
+	bignSign(sign, params, tbs, priv_key, NULL, NULL); //TODO control lengths???
+
+
+	return 1;
 	}
 
 /* ------------------- verify callbacks ---------------------------*/
 
-static int pkey_gost94_cp_verify(EVP_PKEY_CTX *ctx, const unsigned char *sig,
+static int pkey_bign_verify(EVP_PKEY_CTX *ctx, const unsigned char *sig,
 	size_t siglen, const unsigned char *tbs, size_t tbs_len)
 	{
 	int ok = 0;
-	EVP_PKEY* pub_key = EVP_PKEY_CTX_get0_pkey(ctx);
-	DSA_SIG *s=unpack_cp_signature(sig,siglen);
-	if (!s) return 0;
-	if (pub_key) ok = gost_do_verify(tbs,tbs_len,s,EVP_PKEY_get0(pub_key));
-	DSA_SIG_free(s);
-	return ok;
+	EVP_PKEY* evp_pkey = EVP_PKEY_CTX_get0_pkey(ctx);
+	bign_params* params;
+	octet* priv_key, pub_key;//TODO maloc
+	fillPKEYtoBignKey(params, priv_key, pub_key, evp_pkey);
+
+	if(bignVerify(params, tbs, sig, pub_key) == ERR_SUCCESS) {//TODO check parameters order
+		ok = 1;
 	}
+	return ok;
+}
 
