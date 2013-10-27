@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-/* Данные для тестов BELT_ECB */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_ECB */
 extern const unsigned char ECB_1_X[32];	
 extern const unsigned char ECB_1_M[16];	
 
@@ -15,7 +15,7 @@ extern const unsigned char ECB_2_M[54];
 extern const unsigned char ECB_3_X[16];	
 extern const unsigned char ECB_3_M[32];	
 
-/* Данные для тестов BELT_CBC */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_CBC */
 extern const unsigned char CBC_1_X[32];	
 extern const unsigned char CBC_1_M[32];	
 extern const unsigned char CBC_1_S[16];	
@@ -27,7 +27,7 @@ extern const unsigned char CBC_2_S[16];
 extern const unsigned char CBC_3_X[16];	
 extern const unsigned char CBC_3_S[16];	
 
-/* Данные для тестов BELT_CFB */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_CFB */
 extern const unsigned char CFB_1_X[32];	
 extern const unsigned char CFB_1_M[64];	
 extern const unsigned char CFB_1_S[16];	
@@ -40,7 +40,7 @@ extern const unsigned char CFB_3_X[16];
 extern const unsigned char CFB_3_M[32];	
 extern const unsigned char CFB_3_S[16];	
 
-/* Данные для тестов BELT_CTR */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_CTR */
 extern const unsigned char CTR_1_X[32];	
 extern const unsigned char CTR_1_S[16];	
 	
@@ -52,7 +52,7 @@ extern const unsigned char CTR_3_X[16];
 extern const unsigned char CTR_3_M[16];	
 extern const unsigned char CTR_3_S[16];	
 	
-/* Данные для тестов BELT_MAC */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_MAC */
 extern const unsigned char MAC_1_X[32];	
 extern const unsigned char MAC_1_M[12];	
 	
@@ -62,14 +62,14 @@ extern const unsigned char MAC_2_M[32];
 extern const unsigned char MAC_3_X[16];	
 extern const unsigned char MAC_3_M[54];	
 
-/* Данные для тестов BELT_HSH */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_HSH */
 extern const unsigned char HSH_1_M[12];	
 	
 extern const unsigned char HSH_2_M[32];	
 
 extern const unsigned char HSH_3_M[54];	
 
-/* Данные для тестов BELT_DWR */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_DWR */
 extern const unsigned char DWR_1_X[32];	
 extern const unsigned char DWR_1_M[32];	
 extern const unsigned char DWR_1_P[54];	
@@ -84,7 +84,7 @@ extern const unsigned char DWR_3_X[32];
 extern const unsigned char DWR_3_P[12];	
 extern const unsigned char DWR_3_S[16];	
 
-/* Данные для тестов BELT_KWR */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_KWR */
 extern const unsigned char KWR_1_X[32];	
 extern const unsigned char KWR_1_K[32];	
 extern const unsigned char KWR_1_U[16];	
@@ -97,7 +97,7 @@ extern const unsigned char KWR_3_X[32];
 extern const unsigned char KWR_3_K[16];	
 extern const unsigned char KWR_3_U[16];	
 
-/* Данные для тестов BELT_REP */
+/* Г„Г Г­Г­Г»ГҐ Г¤Г«Гї ГІГҐГ±ГІГ®Гў BELT_REP */
 extern const unsigned char REP_1_X[32];
 extern const unsigned char REP_1_L[12];
 extern const unsigned char REP_1_U[16];
