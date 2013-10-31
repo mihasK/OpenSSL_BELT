@@ -1,15 +1,21 @@
-/*
- * bign_ameth.c
- *
- *  Created on: 04.05.2013
- *      Author: denis
- */
+﻿/*
+*******************************************************************************
+\file btls_bign_ameth.c
+\brief Форматы данных для алгоритмов bign
+*******************************************************************************
+\author (С) Олег Соловей, Денис Веремейчик, http://apmi.bsu.by
+\created 2013.05.14
+\version 2013.10.21
+*******************************************************************************
+*/
 
 #ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
 #endif
 #include "btls_bign.h"
 
+#include "btls_err.h"
+#include "btls_oids.h"
 #include "btls_utl.h"
 
 static void reverseOctets(octet *out, const octet *in, int inSize) 
@@ -22,162 +28,64 @@ static void reverseOctets(octet *out, const octet *in, int inSize)
 	return;
 }
 
-// performs computing public key from given params and private key
+/* performs computing public key from given params and private key */
 static octet* computePublicKey(const bign_params *params, const octet *privKey) 
 {
-	int ok;
 	octet *newPubKey;
-	int privSize;
-	octet *revPrivKey;
-	BIGNUM *privBn;
-	BIGNUM *p, *q, *a, *b, *x, *y;
-	bign_params rev_params;
-	EC_POINT *P;
-	EC_GROUP *grp;
-	BN_CTX *ctx;
-	octet *revOct;
-	int shift;
-	EC_KEY *eckey;
-	EC_POINT *pub_key;
-	octet *octX;
-	octet *octY;
 
-	ok = 0;
-	privSize = params->l / 4;
-	revPrivKey = (octet*) OPENSSL_malloc(privSize);
-	reverseOctets(revPrivKey, privKey, privSize);
-	privBn = BN_new();
-	BN_bin2bn(revPrivKey, privSize, privBn);
-	p = NULL; q = NULL; a = NULL; b = NULL; x = NULL; y = NULL;
-	P = NULL;
-	grp = NULL;
-	ctx = BN_CTX_new();
-
-	BN_CTX_start(ctx);
-	p = BN_CTX_get(ctx);
-	a = BN_CTX_get(ctx);
-	b = BN_CTX_get(ctx);
-	x = BN_CTX_get(ctx);
-	y = BN_CTX_get(ctx);
-	q = BN_CTX_get(ctx);
-
-	reverseOctets(rev_params.p, params->p, privSize);
-	reverseOctets(rev_params.a, params->a, privSize);
-	reverseOctets(rev_params.b, params->b, privSize);
-
-	BN_bin2bn(rev_params.p, privSize, p);
-	BN_bin2bn(rev_params.a, privSize, a);
-	BN_bin2bn(rev_params.b, privSize, b);
-
-	grp = EC_GROUP_new_curve_GFp(p, a, b, ctx);
-
-	P = EC_POINT_new(grp);
-
-	
-	BN_zero(x);
-	reverseOctets(rev_params.yG, params->yG, privSize);
-	BN_bin2bn(rev_params.yG, privSize, y);
-	EC_POINT_set_affine_coordinates_GFp(grp, P, x, y, ctx);
-	reverseOctets(rev_params.q, params->q, privSize);
-	BN_bin2bn(rev_params.q, privSize, q);
-
-	EC_GROUP_set_generator(grp, P, q, NULL );
-	eckey = EC_KEY_new();
-
-	EC_KEY_set_group(eckey, grp);
-
-	pub_key = EC_POINT_new(grp);
-	if (!EC_POINT_mul(grp, pub_key, privBn, NULL, NULL, ctx)) 
+	newPubKey = (octet*) OPENSSL_malloc(params->l / 4);
+	if (newPubKey == NULL) return NULL;
+	if (bignCalcPubkey(newPubKey, params, privKey) != ERR_SUCCESS)
 	{
-		//printf("\nError in mult");
-		goto compute_public_err;
-	} else 
-	{
-		if (EC_POINT_get_affine_coordinates_GFp(grp, pub_key, x, y, ctx)) 
-		{
-			revOct = (octet *) OPENSSL_malloc(privSize);
-			octX = (octet *) OPENSSL_malloc(privSize);
-			octY = (octet *) OPENSSL_malloc(privSize);
-
-			memSetZero(revOct, privSize);
-			shift = privSize - BN_num_bytes(x);
-			BN_bn2bin(x, revOct + shift);
-			reverseOctets(octX, revOct, privSize);
-
-			memSetZero(revOct, privSize);
-			shift = privSize - BN_num_bytes(y);
-			BN_bn2bin(y, revOct + shift);
-			reverseOctets(octY, revOct, privSize);
-			newPubKey = (octet*) OPENSSL_malloc(privSize * 2);
-			memCopy(newPubKey, octX, privSize);
-			memCopy(newPubKey + privSize, octY, privSize);
-
-			OPENSSL_free(revOct);
-			OPENSSL_free(octX);
-			OPENSSL_free(octY);
-		} else 
-		{
-			//printf("\nError in get affine coordinate");
-			goto compute_public_err;
-		}
+		OPENSSL_free(newPubKey);
+		return NULL;
 	}
-	ok = 1;
-
-compute_public_err:
-
-	OPENSSL_free(revPrivKey);
-
-	BN_free(privBn);
-	BN_free(p);
-	BN_free(a);
-	BN_free(b);
-	BN_free(x);
-	BN_free(y);
-	BN_free(q);
-
-	EC_POINT_free(P);
-	EC_GROUP_free(grp);
-	BN_CTX_end(ctx);
-	BN_CTX_free(ctx);
-	EC_POINT_free(pub_key);
-	EC_KEY_free(eckey);
-
-	return ok ? newPubKey : NULL;
+	return newPubKey;
 }
 
 static ASN1_STRING *encode_bign_algor_params(const EVP_PKEY *key) 
 {
-	ASN1_STRING *params;
-	BIGN_KEY_PARAMS *bkp;
-	struct bign_key_data *key_data;
+	ASN1_STRING *params = NULL;
+	BIGN_KEY_PARAMS *bkp = NULL;
+	struct bign_key_data *key_data = NULL;
 	int pkey_param_nid;
 
 	params = ASN1_STRING_new();
-	bkp = BIGN_KEY_PARAMS_new();
-	key_data = (struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)key);
-	pkey_param_nid = key_data->param_nid;
-
-	if (!params || !bkp) 
+	if (!params)
 	{
-		// handle error
-		ASN1_STRING_free(params);
-		params = NULL;
-		goto err;
+		ERR_BTLS(BTLS_F_ENCODE_BIGN_ALGOR_PARAMS, ERR_R_MALLOC_FAILURE);
+		return NULL;
 	}
 
-	bkp->key_params = OBJ_nid2obj(pkey_param_nid);
+	bkp = BIGN_KEY_PARAMS_new();
+	if (!bkp) 
+	{
+		ERR_BTLS(BTLS_F_ENCODE_BIGN_ALGOR_PARAMS, ERR_R_MALLOC_FAILURE);
+		ASN1_STRING_free(params);
+		return NULL;
+	}
 
+	key_data = (struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)key);
+	if (!key_data)
+	{
+		ERR_BTLS(BTLS_F_ENCODE_BIGN_ALGOR_PARAMS, ERR_R_MALLOC_FAILURE);
+		ASN1_STRING_free(params);
+		BIGN_KEY_PARAMS_free(bkp);
+		return NULL;
+	}
+
+	pkey_param_nid = key_data->param_nid;
+	bkp->d.key_params = OBJ_nid2obj(pkey_param_nid);
+	bkp->type = 0;
 	params->length = i2d_BIGN_KEY_PARAMS(bkp, &params->data);
 	if (params->length <= 0) 
 	{
-		// handle error
+		ERR_BTLS(BTLS_F_ENCODE_BIGN_ALGOR_PARAMS, BTLS_R_BAD_KEY_PARAMETERS_FORMAT);
 		ASN1_STRING_free(params);
-		params = NULL;
-		goto err;
+		BIGN_KEY_PARAMS_free(bkp);
+		return NULL;
 	}
 	params->type = V_ASN1_SEQUENCE;
-
-err:
 	BIGN_KEY_PARAMS_free(bkp);
 	return params;
 }
@@ -195,7 +103,7 @@ static int decode_bign_algor_params(EVP_PKEY *pkey, X509_ALGOR *palg)
 	ASN1_STRING *pval;
 	const unsigned char *p;
 	BIGN_KEY_PARAMS *bkp;
-	struct bign_key_data *key_data;
+	struct bign_key_data *key_data = NULL;
 
 	palg_obj = NULL;
 	ptype = V_ASN1_UNDEF;
@@ -208,19 +116,19 @@ static int decode_bign_algor_params(EVP_PKEY *pkey, X509_ALGOR *palg)
 	pval = (ASN1_STRING *) _pval;
 	if (ptype != V_ASN1_SEQUENCE) 
 	{
-		// handle error
+		ERR_BTLS(BTLS_F_DECODE_BIGN_ALGOR_PARAMS, BTLS_R_BAD_KEY_PARAMETERS_FORMAT);
 		return 0;
 	}
 	p = pval->data;
-	pkey_nid = OBJ_obj2nid(palg_obj);
+	pkey_nid = OBJ_obj2nid(palg_obj); 
 
 	bkp = d2i_BIGN_KEY_PARAMS(NULL, &p, pval->length);
 	if (!bkp) 
 	{
-		// handle error
+		ERR_BTLS(BTLS_F_DECODE_BIGN_ALGOR_PARAMS, BTLS_R_BAD_KEY_PARAMETERS_FORMAT);
 		return 0;
 	}
-	param_nid = OBJ_obj2nid(bkp->key_params);
+	param_nid = OBJ_obj2nid(bkp->d.key_params);
 	BIGN_KEY_PARAMS_free(bkp);
 	EVP_PKEY_set_type(pkey, pkey_nid);
 	if (bign_nid == pkey_nid) 
@@ -229,19 +137,24 @@ static int decode_bign_algor_params(EVP_PKEY *pkey, X509_ALGOR *palg)
 		if (!key_data) 
 		{
 			key_data = (struct bign_key_data *) OPENSSL_malloc(sizeof(struct bign_key_data));
-			if (!EVP_PKEY_btls_assign(pkey, pkey_nid, key_data)) 
+			if (!key_data) 
 			{
+				ERR_BTLS(BTLS_F_DECODE_BIGN_ALGOR_PARAMS, BTLS_R_MALLOC_FAILURE);
 				return 0;
 			}
+			memSet(key_data, 0, sizeof(struct bign_key_data));
+			if (!EVP_PKEY_btls_assign(pkey, pkey_nid, key_data))  return 0; 
 		}
 		if (!fill_bign_params(key_data, param_nid)) 
 		{
+			ERR_BTLS(BTLS_F_DECODE_BIGN_ALGOR_PARAMS, BTLS_R_UNSUPPORTED_PARAMETER_SET);
 			return 0;
 		}
 	}
 
 	return 1;
 }
+
 
 static int bign_set_priv_key(EVP_PKEY *pkey, octet *priv) 
 {
@@ -256,13 +169,24 @@ static int bign_set_priv_key(EVP_PKEY *pkey, octet *priv)
 		{
 			OPENSSL_cleanse(key_data->privKey, privKeyLength);
 			OPENSSL_free(key_data->privKey);
+			key_data->privKey = NULL;
 		}
 		key_data->privKey = (octet*) OPENSSL_malloc(privKeyLength);
+		if (!key_data->privKey) 
+		{
+			ERR_BTLS(BTLS_F_BIGN_SET_PRIV_KEY, BTLS_R_MALLOC_FAILURE);
+			return 0;
+		}
 		memCopy(key_data->privKey, priv, privKeyLength);
 		if (!EVP_PKEY_missing_parameters(pkey)) 
 		{
 			key_data->pubKey = computePublicKey(&key_data->params, key_data->privKey);
 		}
+	}
+	else
+	{
+		ERR_BTLS(BTLS_F_BIGN_SET_PRIV_KEY, BTLS_R_INCOMPATIBLE_ALGORITHMS);
+		return 0;
 	}
 	return 1;
 }
@@ -273,10 +197,7 @@ static octet* bign_get_priv_key(const EVP_PKEY *pkey)
 	if (bign_nid == EVP_PKEY_btls_base_id(pkey)) 
 	{
 		key_data = (struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)pkey);
-		if (!key_data) 
-		{
-			return NULL;
-		}
+		if (!key_data)  return NULL;
 		return key_data->privKey;
 	}
 	return NULL ;
@@ -288,10 +209,7 @@ static int bign_get_priv_key_length(const EVP_PKEY *pkey)
 	if (bign_nid == EVP_PKEY_btls_base_id(pkey)) 
 	{
 		key_data = (struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)pkey);
-		if (!key_data) 
-		{
-			return 0;
-		}
+		if (!key_data) return 0;
 		return key_data->params.l / 4;
 	}
 	return 0;
@@ -384,12 +302,15 @@ static void pkey_free_bign(EVP_PKEY *key)
 		{
 			OPENSSL_cleanse(key_data->privKey, key_data->params.l / 4);
 			OPENSSL_free(key_data->privKey);
+			key_data->privKey = NULL;
 		}
 		if (key_data->pubKey) 
 		{
 			OPENSSL_free(key_data->pubKey);
+			key_data->pubKey = NULL;
 		}
 		OPENSSL_free(key_data);
+		key->pkey.ptr = NULL;
 	}
 }
 
@@ -410,10 +331,12 @@ static int priv_decode_bign(EVP_PKEY *pk, PKCS8_PRIV_KEY_INFO *p8inf)
 
 	if (!PKCS8_pkey_get0(&palg_obj, &priv_key, &priv_len, &palg, p8inf)) 
 	{
+		ERR_BTLS(BTLS_F_PRIV_DECODE_BIGN, EVP_R_DECODE_ERROR);
 		return 0;
 	}
 	if (!decode_bign_algor_params(pk, palg)) 
 	{
+		ERR_BTLS(BTLS_F_PRIV_DECODE_BIGN, EVP_R_DECODE_ERROR);
 		return 0;
 	}
 
@@ -429,22 +352,27 @@ static int priv_encode_bign(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pk)
 	ASN1_STRING *params;
 	octet *privKey;
 	int privKeyLength;
-	octet *privKeyBuf;
+	octet *privKeyBuf = NULL;
 
 	algobj = OBJ_nid2obj(EVP_PKEY_btls_base_id(pk));
 	params = encode_bign_algor_params(pk);
 	privKey = bign_get_priv_key(pk);
 	privKeyLength = bign_get_priv_key_length(pk);
 	privKeyBuf = (octet *) OPENSSL_malloc(privKeyLength);
+	if (!privKeyBuf)
+	{
+		ERR_BTLS(BTLS_F_PRIV_ENCODE_BIGN, BTLS_R_MALLOC_FAILURE);
+		return 0;
+	}
 
 	if (!params) 
 	{
+		ERR_BTLS(BTLS_F_PRIV_ENCODE_BIGN, EVP_R_ENCODE_ERROR);
 		return 0;
 	}
 
 	memCopy(privKeyBuf, privKey, privKeyLength);
-	return PKCS8_pkey_set0(p8, algobj, 0, V_ASN1_SEQUENCE, params,
-			privKeyBuf, privKeyLength);
+	return PKCS8_pkey_set0(p8, algobj, 0, V_ASN1_SEQUENCE, params, privKeyBuf, privKeyLength);
 }
 
 /* --------- printing keys --------------------------------*/
@@ -453,13 +381,10 @@ static void print_octets(BIO *out, octet *octets, int length)
 {
 	int i;
 	for (i = 0; i < length; i++) 
-	{
 		BIO_printf(out, "%02X", octets[i]);
-	}
 }
 
-static int print_bign(BIO *out, const EVP_PKEY *pkey, int indent,
-		ASN1_PCTX *pctx, int type) 
+static int print_bign(BIO *out, const EVP_PKEY *pkey, int indent, ASN1_PCTX *pctx, int type) 
 {
 	int param_nid;
 	int max_indent;
@@ -474,98 +399,82 @@ static int print_bign(BIO *out, const EVP_PKEY *pkey, int indent,
 
 	if (type == 2) 
 	{
-		if (!BIO_indent(out, indent, max_indent)) 
-		{
-			return 0;
-		}
+		if (!BIO_indent(out, indent, max_indent))  return 0;
 		BIO_printf(out, "Private key: ");
 		key = bign_get_priv_key(pkey);
 		if (!key) 
-		{
 			BIO_printf(out, "<undefined)");
-		} else 
-		{
+		 else 
 			print_octets(out, key, priv_key_length);
-		}
 		BIO_printf(out, "\n");
 	}
 	if (type >= 1) {
-		if (!BIO_indent(out, indent, max_indent)) 
-		{
-			return 0;
-		}
+		if (!BIO_indent(out, indent, max_indent))  return 0;
 		BIO_printf(out, "Public key: ");
 		print_octets(out, key_data->pubKey, priv_key_length * 2);
 		BIO_printf(out, "\n");
 	}
 
 	param_nid = key_data->param_nid;
-	if (!BIO_indent(out, indent, max_indent)) 
-	{
-		return 0;
-	}
+	if (!BIO_indent(out, indent, max_indent))  return 0;
 	BIO_printf(out, "Parameter set: %s\n", OBJ_nid2ln(param_nid));
 	return 1;
 }
 
-static int param_print_bign(BIO *out, const EVP_PKEY *pkey, int indent,
-		ASN1_PCTX *pctx) 
+static int param_print_bign(BIO *out, const EVP_PKEY *pkey, int indent, ASN1_PCTX *pctx) 
 {
 	return print_bign(out, pkey, indent, pctx, 0);
 }
 
-static int pub_print_bign(BIO *out, const EVP_PKEY *pkey, int indent,
-		ASN1_PCTX *pctx) 
+static int pub_print_bign(BIO *out, const EVP_PKEY *pkey, int indent, ASN1_PCTX *pctx) 
 {
 	return print_bign(out, pkey, indent, pctx, 1);
 }
 
-static int priv_print_bign(BIO *out, const EVP_PKEY *pkey, int indent,
-		ASN1_PCTX *pctx) 
+static int priv_print_bign(BIO *out, const EVP_PKEY *pkey, int indent, ASN1_PCTX *pctx) 
 {
 	return print_bign(out, pkey, indent, pctx, 2);
 }
 
 static int param_missing_bign(const EVP_PKEY *pk) 
 {
-	const struct bign_key_data *key_data;
+	const struct bign_key_data *key_data = NULL;
 	
 	key_data = (const struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)pk);
+	if (!key_data) return 1;
+	if (key_data->param_nid == NID_undef) return 1;
 
-	if (!key_data) 
-	{
-		return 1;
-	}
-	if (key_data->param_nid == NID_undef) 
-	{
-		return 1;
-	}
 	return 0;
 }
 
 static int param_copy_bign(EVP_PKEY *to, const EVP_PKEY *from) 
 {
-	struct bign_key_data *eto;
-	const struct bign_key_data *efrom;
+	struct bign_key_data *eto = NULL;
+	const struct bign_key_data *efrom = NULL;
 
 	eto = (struct bign_key_data *) EVP_PKEY_get0(to);
 	efrom = (const struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)from);
 
 	if (EVP_PKEY_btls_base_id(from) != EVP_PKEY_btls_base_id(to)) 
 	{
-		// handle error
+		ERR_BTLS(BTLS_F_PARAM_COPY_BIGN, BTLS_R_INCOMPATIBLE_ALGORITHMS);
 		return 0;
 	}
 	if (!efrom) 
 	{
-		// handle error
+		ERR_BTLS(BTLS_F_PARAM_COPY_BIGN, BTLS_R_KEY_PARAMETERS_MISSING);
 		return 0;
 	}
 	if (!eto) 
 	{
-		eto = (struct bign_key_data *) OPENSSL_malloc(sizeof (struct bign_key_data));;
-		if (EVP_PKEY_btls_assign(to, EVP_PKEY_btls_base_id(from), eto) <= 0)
+		eto = (struct bign_key_data *) OPENSSL_malloc(sizeof (struct bign_key_data));
+		if (!eto) 
+		{
+			ERR_BTLS(BTLS_F_PARAM_COPY_BIGN, BTLS_R_MALLOC_FAILURE);
 			return 0;
+		}
+		memSet(eto, 0, sizeof (struct bign_key_data));
+		if (EVP_PKEY_btls_assign(to, EVP_PKEY_btls_base_id(from), eto) <= 0) return 0;
 	}
 	eto->param_nid = efrom->param_nid;
 	eto->params = efrom->params;
@@ -574,6 +483,7 @@ static int param_copy_bign(EVP_PKEY *to, const EVP_PKEY *from)
 		eto->pubKey = computePublicKey(&eto->params, eto->privKey);
 		if (!eto->pubKey) 
 		{
+			ERR_BTLS(BTLS_F_PARAM_COPY_BIGN, BTLS_R_NO_PARAMETERS_SET);
 			return 0;
 		}
 	}
@@ -589,9 +499,8 @@ static int param_cmp_bign(const EVP_PKEY *a, const EVP_PKEY *b)
 	data_b = (const struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)b);
 	
 	if (data_a->param_nid == data_b->param_nid) 
-	{
 		return 1;
-	}
+
 	return 0;
 }
 
@@ -603,24 +512,34 @@ static int pub_decode_bign(EVP_PKEY *pk, X509_PUBKEY *pub)
 	const unsigned char *pubkey_buf;
 	ASN1_OBJECT *palgobj;
 	int pub_len;
-	octet *pub_key;
+	octet *pub_key = NULL;
 	struct bign_key_data *key_data;
 
 	palg = NULL;
 	pubkey_buf = NULL;
 	palgobj = NULL;
 
-	if (!X509_PUBKEY_get0_param(&palgobj, &pubkey_buf, &pub_len, &palg, pub)) 
-	{
-		return 0;
-	}
-	if (EVP_PKEY_btls_assign(pk, OBJ_obj2nid(palgobj), NULL) <= 0)
-		return 0;
+	if (!X509_PUBKEY_get0_param(&palgobj, &pubkey_buf, &pub_len, &palg, pub))  return 0;
+	
+	//if(!btls_сhange_оbj_data(&palgobj, OID_bign)) 
+	//{
+	//	ERR_BTLS(BTLS_F_PUB_DECODE_BIGN, BTLS_R_DECODE_ERR);
+	//	return 0;
+	//}
+
+	EVP_PKEY_btls_assign(pk, OBJ_obj2nid(palgobj), NULL);
+
 	if (!decode_bign_algor_params(pk, palg)) 
 	{
+		ERR_BTLS(BTLS_F_PUB_DECODE_BIGN, BTLS_R_DECODE_ERR);
 		return 0;
 	}
 	pub_key = (octet *) OPENSSL_malloc(pub_len);
+	if (!pub_key) 
+	{
+		ERR_BTLS(BTLS_F_PUB_DECODE_BIGN, BTLS_R_MALLOC_FAILURE);
+		return 0;
+	}
 	memCopy(pub_key, pubkey_buf, pub_len);
 
 	key_data = (struct bign_key_data *) EVP_PKEY_get0(pk);
@@ -637,7 +556,7 @@ static int pub_encode_bign(X509_PUBKEY *pub, const EVP_PKEY *pk)
 	struct bign_key_data *key_data;
 	int ptype;
 	int pub_key_length;
-	octet *pub_key_buf;
+	octet *pub_key_buf = NULL;
 
 	algobj = NULL;
 	pval = NULL;
@@ -646,22 +565,41 @@ static int pub_encode_bign(X509_PUBKEY *pub, const EVP_PKEY *pk)
 	ptype = V_ASN1_UNDEF;
 
 	algobj = OBJ_nid2obj(EVP_PKEY_btls_base_id(pk));
+	//algobj = ASN1_OBJECT_new();
+	//memSet(algobj, 0, sizeof(ASN1_OBJECT));
+	//algobj->nid = EVP_PKEY_btls_base_id(pk);
+	//algobj->ln = LN_bign; /* LN_bign_pubkey; */
+	//algobj->sn = SN_bign; /* SN_bign_pubkey; */
+	//algobj->flags = ASN1_OBJECT_FLAG_DYNAMIC | ASN1_OBJECT_FLAG_DYNAMIC_DATA; 
+	//if(!btls_сhange_оbj_data(&algobj, OID_bign_pubkey)) 
+	//{
+	//	ERR_BTLS(BTLS_F_PUB_ENCODE_BIGN, BTLS_R_ENCODE_ERR);
+	//	return 0;
+	//}
+
 	if (pk->save_parameters) 
 	{
 		ASN1_STRING *params = encode_bign_algor_params(pk);
+		if (params == NULL)
+		{
+			ERR_BTLS(BTLS_F_PUB_ENCODE_BIGN, BTLS_R_ENCODE_ERR);
+			return 0;
+		}
 		pval = params;
-		ptype = V_ASN1_SEQUENCE;
+		ptype = V_ASN1_SEQUENCE; 
 	}
 	pub_key = key_data->pubKey;
-
-	if (!pub_key) {
-		// handle error
-		return 0;
-	}
+	if (!pub_key)  return 0;
 
 	pub_key_length = key_data->params.l / 2;
 	pub_key_buf = (octet *) OPENSSL_malloc(pub_key_length);
+	if (!pub_key_buf) 
+	{	
+		ERR_BTLS(BTLS_F_PUB_ENCODE_BIGN, BTLS_R_MALLOC_FAILURE);
+		return 0;
+	}
 	memCopy(pub_key_buf, pub_key, pub_key_length);
+
 	return X509_PUBKEY_set0_param(pub, algobj, ptype, pval, pub_key_buf, pub_key_length);
 }
 
@@ -674,15 +612,11 @@ static int pub_cmp_bign(const EVP_PKEY *a, const EVP_PKEY *b)
 	data_a = (const struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)a);
 	data_b = (const struct bign_key_data *) EVP_PKEY_get0((EVP_PKEY *)b);
 
-	if (!data_a || !data_b) 
-	{
-		return 0;
-	}
+	if (!data_a || !data_b) return 0;
 	ka = data_a->pubKey;
 	kb = data_b->pubKey;
-	if (!ka || !kb) {
-		return 0;
-	}
+	if (!ka || !kb) return 0;
+	
 	return (memcmp(ka, kb, data_a->params.l / 2) == 0);
 }
 
@@ -695,7 +629,6 @@ static int pkey_size_bign(const EVP_PKEY *pk)
 
 static int pkey_bits_bign(const EVP_PKEY *pk) 
 {
-	// TODO: think about this value
 	return pkey_size_bign(pk) << 3;
 }
 
@@ -710,27 +643,24 @@ static int bign_param_decode(EVP_PKEY *pkey, const unsigned char **pder, int der
 {
 	ASN1_OBJECT *obj;
 	int nid;
-	struct bign_key_data *key_data;
+	struct bign_key_data *key_data = NULL;
 
 	obj = NULL;
 	key_data = (struct bign_key_data *) EVP_PKEY_get0(pkey);
 
-	if (d2i_ASN1_OBJECT(&obj, pder, derlen) == NULL ) 
-	{
-		return 0;
-	}
+	if (d2i_ASN1_OBJECT(&obj, pder, derlen) == NULL )  return 0;
 	nid = OBJ_obj2nid(obj);
 	ASN1_OBJECT_free(obj);
 	if (!key_data) 
 	{
 		key_data = (struct bign_key_data *) OPENSSL_malloc(sizeof (struct bign_key_data));
-		if (!EVP_PKEY_btls_assign(pkey, bign_nid, key_data)) 
-		{
-			return 0;
-		}
+		if(!key_data) return 0;
+		memSet(key_data, 0, sizeof (struct bign_key_data));
+		if (!EVP_PKEY_btls_assign(pkey, bign_nid, key_data))  return 0; 
 	}
 	if (!fill_bign_params(key_data, nid)) 
 	{
+		ERR_BTLS(BTLS_F_BIGN_PARAM_DECODE, BTLS_R_UNSUPPORTED_PARAMETER_SET);
 		return 0;
 	}
 	return 1;
@@ -740,10 +670,7 @@ static int bign_param_decode(EVP_PKEY *pkey, const unsigned char **pder, int der
 int register_ameth_bign(int nid, EVP_PKEY_ASN1_METHOD **ameth, const char* pemstr, const char* info) 
 {
 	*ameth = EVP_PKEY_asn1_new(nid, ASN1_PKEY_SIGPARAM_NULL, pemstr, info);
-	if (!*ameth) 
-	{
-		return 0;
-	}
+	if (!*ameth) return 0;
 	if (bign_nid == nid) 
 	{
 		EVP_PKEY_asn1_set_free(*ameth, pkey_free_bign);
@@ -758,6 +685,11 @@ int register_ameth_bign(int nid, EVP_PKEY_ASN1_METHOD **ameth, const char* pemst
 				pkey_bits_bign);
 
 		EVP_PKEY_asn1_set_ctrl(*ameth, pkey_ctrl_bign);
+	}
+	else
+	{
+		EVP_PKEY_asn1_free(*ameth);
+		return 0;
 	}
 	return 1;
 }

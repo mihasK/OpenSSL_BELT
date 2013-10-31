@@ -1,9 +1,9 @@
-/*!
+﻿/*!
 *******************************************************************************
 \file btls_err.h
-\brief Îïðåäåëåíèå êîäîâ îøèáîê è ôóíêöèé
+\brief Определение кодов ошибок и функций обработки ошибок
 *//****************************************************************************
-\author (Ñ) Îëåã Ñîëîâåé http://apmi.bsu.by
+\author (С) Олег Соловей http://apmi.bsu.by
 \created 2013.08.01
 \version 2013.09.26
 *******************************************************************************
@@ -29,7 +29,20 @@ void ERR_BTLS_error(int function, int reason, char *file, int line);
 #define BTLS_F_PKEY_BELT_MAC_COPY						202
 #define BTLS_F_PKEY_BELT_MAC_KEYGEN						203
 #define BTLS_F_BIND_BTLS								204
-#define BTLS_F_BELT_CTR_CONTROL							205
+#define BTLS_F_BELT_CIPHER_CONTROL						205
+#define BTLS_F_BELT_DWP_CONTROL							206
+#define BTLS_F_EVP_PKEY_BTLS_ASSIGN						207
+#define BTLS_F_PKEY_BELT_MAC_CTRL						208
+#define BTLS_F_PKEY_BELT_MAC_CTRL_STR					209
+#define BTLS_F_DECODE_BIGN_ALGOR_PARAMS					210
+#define BTLS_F_ENCODE_BIGN_ALGOR_PARAMS					211
+#define BTLS_F_PRIV_DECODE_BIGN							212
+#define BTLS_F_PRIV_ENCODE_BIGN							213
+#define BTLS_F_PARAM_COPY_BIGN							214
+#define BTLS_F_BIGN_SET_PRIV_KEY						215
+#define BTLS_F_BIGN_PARAM_DECODE						216
+#define BTLS_F_PUB_DECODE_BIGN							217
+#define BTLS_F_PUB_ENCODE_BIGN							218
 
 /* Reason codes. */
 #define BTLS_R_BAD_KEY_PARAMETERS_FORMAT				200
@@ -68,7 +81,8 @@ void ERR_BTLS_error(int function, int reason, char *file, int line);
 #define BTLS_R_UNSUPPORTED_PARAMETER_SET				235
 #define BTLS_R_UNSUPPORTED_CTRL_CMD						236
 #define BTLS_R_REGISTER_ERR								237
-
+#define BTLS_R_DECODE_ERR								238
+#define BTLS_R_ENCODE_ERR								239
 
 #ifdef  __cplusplus
 }

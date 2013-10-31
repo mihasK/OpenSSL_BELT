@@ -1,16 +1,16 @@
-/*!
+﻿/*!
 *******************************************************************************
 \file btls_mem.h
-\brief Îïðåäåëåíèå ôóíêöèé ðàáîòû ñ ïàìÿòüþ 
+\brief Определение функций работы с памятью 
 *//****************************************************************************
-\author (Ñ) Äåíèñ Âåðåìåé÷èê http://apmi.bsu.by
+\author (С) Денис Веремейчик http://apmi.bsu.by
 \created 2013.08.01
 \version 2013.09.26
 *******************************************************************************
 */
 
-#ifndef _BELT_MEM_H_
-#define _BELT_MEM_H_
+#ifndef __BTLS_MEM_H
+#define __BTLS_MEM_H
 
 #include <memory.h>
 #include <string.h>
@@ -26,4 +26,4 @@
 
 #define memSetZero(dest, count) memSet(dest, 0, count)
 
-#endif /* MEM_H_ */
+#endif /* __BTLS_MEM_H */

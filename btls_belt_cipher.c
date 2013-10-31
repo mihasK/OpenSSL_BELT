@@ -1,27 +1,29 @@
-/*!
+﻿/*
 *******************************************************************************
-\file btls_oids.h
-\brief Ðåàëèçàöèÿ ñèììåòðè÷íûõ àëãîðèòìîâ øèôðîâàíèÿ äëÿ ýíæàéíà btls 
-*****************************************************************************
-\author (Ñ) Îëåã Ñîëîâåé http://apmi.bsu.by
+\file btls_belt_cipher.c
+\brief Подключение алгоритмов шифрования belt
+*******************************************************************************
+\author (С) Олег Соловей, http://apmi.bsu.by
 \created 2013.05.14
 \version 2013.10.21
 *******************************************************************************
 */
+
 #include "btls_belt.h"
 #include "btls_err.h"
 #include <rand/rand.h>
 
-/* ðåæèì ñ÷åò÷èêà */
+/* режим счетчика */
 static int belt_ctr_init(EVP_CIPHER_CTX *ctx, const unsigned char *key, const unsigned char *iv, int enc);
 static int belt_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsigned char *in, unsigned int inl);
 static int belt_ctr_cleanup(EVP_CIPHER_CTX *ctx);
-static int belt_ctr_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
+/* общая для режимов ctr, ofb функция*/
+static int belt_cipher_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
 
 /*  
- *  Îïðåäåëåíèå ñòðóêòóðû äëÿ ïîòî÷íîãî àëãîðèòìà.
- *  Â êà÷åñòâå ïîòî÷íîãî àëãîðèòìà áóäåì èñïîëüçîâàòü àëãîðèòì øèôðîâàíèÿ â ðåæèìå ñ÷åò÷èêà 
- *  (ñîãëàñíî êðèïòîíàáîðàì btls)
+ *  Определение структуры для поточного алгоритма.
+ *  В качестве поточного алгоритма будем использовать алгоритм шифрования в режиме счетчика 
+ *  (согласно криптонаборам btls)
  */
 EVP_CIPHER belt_stream = 
 {
@@ -37,11 +39,11 @@ EVP_CIPHER belt_stream =
 	0, /* ctx_size (will be initialize in bind function) */ 
 	NULL, /* set asn1 params */
 	NULL, /* get asn1 params */
-	belt_ctr_control, /* control function */
+	belt_cipher_control, /* control function */
 	NULL  /* application data */
 };
 
-/* Îïðåäåëåíèå ñòðóêòóðû äëÿ áëî÷íîãî àëãîðèòìà â ðåæèìå ñ÷åò÷èêà */
+/* Определение структуры для блочного алгоритма в режиме счетчика */
 EVP_CIPHER belt_ctr = 
 {
 	NID_undef,
@@ -56,15 +58,14 @@ EVP_CIPHER belt_ctr =
 	0, /* ctx_size (will be initialize in bind function) */ 
 	NULL, /* set asn1 params */
 	NULL, /* get asn1 params */
-	belt_ctr_control, /* control function */
+	belt_cipher_control, /* control function */
 	NULL  /* application data */
 };
 
-/* ðåæèì ãàììèðîâàíèÿ ñ îáðàòíîé ñâÿçüþ */
+/* режим гаммирования с обратной связью */
 static int belt_cfb_init(EVP_CIPHER_CTX *ctx, const unsigned char *key, const unsigned char *iv, int enc);
 static int belt_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsigned char *in, unsigned int inl);
 static int belt_cfb_cleanup(EVP_CIPHER_CTX *ctx);
-static int belt_cfb_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
 
 EVP_CIPHER belt_cfb = 
 {
@@ -80,17 +81,17 @@ EVP_CIPHER belt_cfb =
 	0, /* ctx_size (will be initialize in bind function) */ 
 	NULL, /* set asn1 params */
 	NULL, /* get asn1 params */
-	belt_cfb_control, /* control function */
+	belt_cipher_control, /* control function */
 	NULL  /* application data */
 };
 
-/* ðåæèì îäíîâðåìåííîãî øèôðîâàíèÿ è èìèòîçàùèòû äàííûõ */
+/* режим одновременного шифрования и имитозащиты данных */
 static int belt_dwp_init(EVP_CIPHER_CTX *ctx, const unsigned char *key, const unsigned char *iv, int enc);
 static int belt_dwp_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsigned char *in, unsigned int inl);
 static int belt_dwp_cleanup(EVP_CIPHER_CTX *ctx);
 static int belt_dwp_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr);
 
-/* ðåæèì îäíîâðåìåííîãî øèôðîâàíèÿ è èìèòîçàùèòû äàííûõ áóäåì îïðåäåëÿòü êàê GCM */	
+/* режим одновременного шифрования и имитозащиты данных будем определять как GCM */	
 EVP_CIPHER belt_dwp = 
 {
 	NID_undef,
@@ -140,24 +141,24 @@ static int belt_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsign
 
 static int belt_ctr_cleanup(EVP_CIPHER_CTX *ctx) 
 {
-	memSetZero(ctx->cipher_data, beltCTRStackDeep());
+	memSetZero(ctx->cipher_data, beltCTR_deep());
 	ctx->app_data = NULL;
 	return 1;
 }
 
-int belt_ctr_control(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
+int belt_cipher_control(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
 {
 	switch (type)
 	{
 	case EVP_CTRL_RAND_KEY:
 		if (RAND_bytes((unsigned char *)ptr, EVP_CIPHER_CTX_key_length(ctx))<=0)
 		{
-			ERR_BTLS(BTLS_F_BELT_CTR_CONTROL, BTLS_R_RANDOM_GENERATOR_ERROR);
+			ERR_BTLS(BTLS_F_BELT_CIPHER_CONTROL, BTLS_R_RANDOM_GENERATOR_ERROR);
 			return -1;
 		}
 		break;
-/*	Àíàëîãè÷íûé êîä ñêîðåå âñåãî ïðèäåòñÿ ðåàëèçîâàòü äëÿ belt
- *  ïðè "ïîëíîì" âñòðàèâàíèè ...
+/*	Аналогичный код скорее всего придется реализовать для belt
+ *  при "полном" встраивании ...
  *
  * case EVP_CTRL_PBE_PRF_NID:
  *		if (ptr) 
@@ -170,7 +171,7 @@ int belt_ctr_control(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
  *		break;
  */				
 	default:
-		ERR_BTLS(BTLS_F_BELT_CTR_CONTROL, BTLS_R_UNSUPPORTED_CIPHER_CTL_COMMAND);
+		ERR_BTLS(BTLS_F_BELT_CIPHER_CONTROL, BTLS_R_UNSUPPORTED_CIPHER_CTL_COMMAND);
 		return -1;
 	}
 	return 1;
@@ -208,15 +209,11 @@ static int belt_cfb_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsign
 
 static int belt_cfb_cleanup(EVP_CIPHER_CTX *ctx) 
 {
-	memSetZero(ctx->cipher_data, beltCFBStackDeep());
+	memSetZero(ctx->cipher_data, beltCFB_deep());
 	ctx->app_data = NULL;
 	return 1;
 }
 
-int belt_cfb_control(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
-{
-	return belt_ctr_control(ctx, type, arg, ptr);
-}
 
 /* Implementation of belt-dwp mode */
 
@@ -241,36 +238,36 @@ static int belt_dwp_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsign
 	if (in)
 	{ /* update */
 		if (!out)
-		{ /* îáðàáîòêà îòêðûòûõ äàííûõ */
-			beltDWPStepI(in, inl, ctx->cipher_data); /* èìèòîçàùèòà */
+		{ /* обработка открытых данных */
+			beltDWPStepI(in, inl, ctx->cipher_data); /* имитозащита */
 		}
 		else
-		{ /* îáðàáîòêà êðèòè÷åñêèõ äàííûõ */
+		{ /* обработка критических данных */
 			if (ctx->encrypt) 
-			{ /* çàøèôðîâàíèå */
+			{ /* зашифрование */
 				memCopy(out, in, inl);
-				beltDWPStepE(out, inl, ctx->cipher_data); /* çàøèôðîâàíèå */
-				beltDWPStepA(out, inl, ctx->cipher_data); /* ïîäñ÷åò èìèòîâñòàâêè */
+				beltDWPStepE(out, inl, ctx->cipher_data); /* зашифрование */
+				beltDWPStepA(out, inl, ctx->cipher_data); /* подсчет имитовставки */
 			}
 			else
-			{ /* ðàñøèôðîâàíèå */
+			{ /* расшифрование */
 				memCopy(out, in, inl);
-				beltDWPStepA(out, inl, ctx->cipher_data); /* ïîäñ÷åò èìèòîâñòàâêè */
-				beltDWPStepD(out, inl, ctx->cipher_data); /* ðàñøèôðîâàíèå */
+				beltDWPStepA(out, inl, ctx->cipher_data); /* подсчет имитовставки */
+				beltDWPStepD(out, inl, ctx->cipher_data); /* расшифрование */
 			}
 		}
-		return inl;
+		return inl; /* возвращаем количество обработанных данных */
 	}
 	else
 	{ /* finish */
 		if (!ctx->encrypt)
-		{ /* ðåæèì ðàñøèôðîâàíèÿ */
+		{ /* режим расшифрования */
 			beltDWPStepG(mac, ctx->cipher_data);
 			if (memCmp(mac, ctx->buf, BELT_MAC_SIZE) != 0)
 				return -1;
 		}
 		else
-		{ /* ðåæèì çàøèôðîâàíèÿ */
+		{ /* режим зашифрования */
 			beltDWPStepG(ctx->buf, ctx->cipher_data);
 		}
 		return 0; 
@@ -279,7 +276,7 @@ static int belt_dwp_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsign
 
 static int belt_dwp_cleanup(EVP_CIPHER_CTX *ctx) 
 {
-	memSetZero(ctx->cipher_data, beltDWPStackDeep());
+	memSetZero(ctx->cipher_data, beltDWP_deep());
 	ctx->app_data = NULL;
 	return 1;
 }
@@ -290,25 +287,31 @@ static int belt_dwp_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
 	{
 	case EVP_CTRL_GCM_SET_TAG:
 		if (arg != BELT_MAC_SIZE || c->encrypt)
-			return 0;
+		{
+			ERR_BTLS(BTLS_F_BELT_DWP_CONTROL, BTLS_R_INVALID_CIPHER_PARAMS);
+			return -1;
+		}
 		memCopy(c->buf, ptr, arg);
 		break;
 
 	case EVP_CTRL_GCM_GET_TAG:
 		if (arg != BELT_MAC_SIZE || !c->encrypt )
-			return 0;
+		{
+			ERR_BTLS(BTLS_F_BELT_DWP_CONTROL, BTLS_R_INVALID_CIPHER_PARAMS);
+			return -1;
+		}
 		memCopy(ptr, c->buf, arg);
 		break;
 
 	case EVP_CTRL_RAND_KEY:
 		if (RAND_bytes((unsigned char *)ptr, BELT_KEY_SIZE)<=0)
 		{
-			ERR_BTLS(BTLS_F_BELT_CTR_CONTROL, BTLS_R_RANDOM_GENERATOR_ERROR);
+			ERR_BTLS(BTLS_F_BELT_DWP_CONTROL, BTLS_R_RANDOM_GENERATOR_ERROR);
 			return -1;
 		}
 		break;
-/*	Àíàëîãè÷íûé êîä ñêîðåå âñåãî ïðèäåòñÿ ðåàëèçîâàòü äëÿ belt
- *  ïðè "ïîëíîì" âñòðàèâàíèè ...
+/*	Аналогичный код скорее всего придется реализовать для belt
+ *  при "полном" встраивании ...
  *
 *	case EVP_CTRL_PBE_PRF_NID:
  *		if (ptr) 
@@ -326,7 +329,7 @@ static int belt_dwp_control(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
  *  ...
  */
 	default:
-		ERR_BTLS(BTLS_F_BELT_CTR_CONTROL, BTLS_R_UNSUPPORTED_CIPHER_CTL_COMMAND);
+		ERR_BTLS(BTLS_F_BELT_DWP_CONTROL, BTLS_R_UNSUPPORTED_CIPHER_CTL_COMMAND);
 		return -1;
 	}
 	return 1;

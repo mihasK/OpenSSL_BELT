@@ -1,3 +1,14 @@
+﻿/*
+*******************************************************************************
+\file btls_belt_mac.c
+\brief Подключение алгоритмов имитозащиты belt
+*******************************************************************************
+\author (С) Олег Соловей, Денис Веремейчик, http://apmi.bsu.by
+\created 2013.06.18
+\version 2013.10.21
+*******************************************************************************
+*/
+
 #include "btls_belt.h"
 #include "btls_err.h"
 #include "btls_utl.h"
@@ -57,13 +68,13 @@ static int belt_mac_final(EVP_MD_CTX *ctx, unsigned char *md)
 
 static int belt_mac_copy(EVP_MD_CTX *to, const EVP_MD_CTX *from) 
 {
-	memCopy(to->md_data, from->md_data, beltMACStackDeep());
+	memCopy(to->md_data, from->md_data, beltMAC_deep());
 	return 1;
 }
 
 static int belt_mac_cleanup(EVP_MD_CTX *ctx) 
 {
-	memSetZero(ctx->md_data, beltMACStackDeep());
+	memSetZero(ctx->md_data, beltMAC_deep());
 	return 1;
 }
 

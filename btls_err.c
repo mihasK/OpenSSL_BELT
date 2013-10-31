@@ -1,13 +1,14 @@
-/*!
+﻿/*
 *******************************************************************************
-\file btls_err.h
-\brief Ðåàëèçàöèÿ ôóíêöèé âûâîäà êîäîâ îøèáîê
-*//****************************************************************************
-\author (Ñ) Îëåã Ñîëîâåé http://apmi.bsu.by
+\file btls_err.c
+\brief Управление ошибками
+*******************************************************************************
+\author (С) Олег Соловей, http://apmi.bsu.by
 \created 2013.08.01
 \version 2013.09.26
 *******************************************************************************
 */
+
 #include <stdio.h>
 #include <openssl/err.h>
 #include "btls_err.h"
@@ -26,7 +27,20 @@ static ERR_STRING_DATA BTLS_str_functs[]= {
 {ERR_FUNC(BTLS_F_PKEY_BELT_MAC_COPY),		"BELT_MAC_COPY"},
 {ERR_FUNC(BTLS_F_PKEY_BELT_MAC_KEYGEN),		"BELT_MAC_KEYGEN"},
 {ERR_FUNC(BTLS_F_BIND_BTLS),				"BIND_BTLS"},
-{ERR_FUNC(BTLS_F_BELT_CTR_CONTROL),			"BTLS_F_BELT_CTR_CONTROL"},
+{ERR_FUNC(BTLS_F_BELT_CIPHER_CONTROL),		"BTLS_F_BELT_CIPHER_CONTROL"},
+{ERR_FUNC(BTLS_F_BELT_DWP_CONTROL),			"BTLS_F_BELT_DWP_CONTROL"},
+{ERR_FUNC(BTLS_F_EVP_PKEY_BTLS_ASSIGN),		"BTLS_F_EVP_PKEY_BTLS_ASSIGN"},
+{ERR_FUNC(BTLS_F_PKEY_BELT_MAC_CTRL),		"BTLS_F_PKEY_BELT_MAC_CTRL"},
+{ERR_FUNC(BTLS_F_PKEY_BELT_MAC_CTRL_STR),	"BTLS_F_PKEY_BELT_MAC_CTRL_STR"},
+{ERR_FUNC(BTLS_F_DECODE_BIGN_ALGOR_PARAMS),  "BTLS_F_DECODE_BIGN_ALGOR_PARAMS"},
+{ERR_FUNC(BTLS_F_ENCODE_BIGN_ALGOR_PARAMS), "BTLS_F_ENCODE_BIGN_ALGOR_PARAMS"},
+{ERR_FUNC(BTLS_F_PRIV_DECODE_BIGN),			"BTLS_F_PRIV_DECODE_BIGN"},
+{ERR_FUNC(BTLS_F_PRIV_ENCODE_BIGN),			"BTLS_F_PRIV_ENCODE_BIGN"},
+{ERR_FUNC(BTLS_F_PARAM_COPY_BIGN),			"BTLS_F_PARAM_COPY_BIGN"},
+{ERR_FUNC(BTLS_F_BIGN_SET_PRIV_KEY),		"BTLS_F_BIGN_SET_PRIV_KEY"},
+{ERR_FUNC(BTLS_F_BIGN_PARAM_DECODE),		"BTLS_F_BIGN_PARAM_DECODE"},
+{ERR_FUNC(BTLS_F_PUB_DECODE_BIGN),			"BTLS_F_PUB_DECODE_BIGN"},
+{ERR_FUNC(BTLS_F_PUB_ENCODE_BIGN),			"BTLS_F_PUB_ENCODE_BIGN"},
 {0,NULL}};
 
 static ERR_STRING_DATA BTLS_str_reasons[]= {
@@ -66,6 +80,8 @@ static ERR_STRING_DATA BTLS_str_reasons[]= {
 {ERR_REASON(BTLS_R_UNSUPPORTED_PARAMETER_SET),"unsupported parameter set"},
 {ERR_REASON(BTLS_R_UNSUPPORTED_CTRL_CMD), "unsupported control function mode"},
 {ERR_REASON(BTLS_R_REGISTER_ERR), "register nid error"},
+{ERR_REASON(BTLS_R_DECODE_ERR), "decode error"},
+{ERR_REASON(BTLS_R_ENCODE_ERR), "encode error"},
 {0,NULL}};
 #endif
 

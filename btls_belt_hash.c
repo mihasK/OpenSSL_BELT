@@ -1,9 +1,13 @@
-/*
- * belt_digest.c
- *
- *  Created on: Jan 1, 2013
- *      Author: mihas
- */
+﻿/*
+*******************************************************************************
+\file btls_belt_hash.c
+\brief Подключение алгоритмов шифрования belt
+*******************************************************************************
+\author (С) Михаил Койпиш, http://apmi.bsu.by
+\created 2013.08.14
+\version 2013.10.21
+*******************************************************************************
+*/
 
 #include "btls_belt.h"
 
@@ -21,7 +25,7 @@ EVP_MD belt_hash =
 	NID_undef,
 	NID_undef, 
 	BELT_HASH_SIZE,
-	EVP_MD_FLAG_PKEY_METHOD_SIGNATURE,  /* ???? */
+	EVP_MD_FLAG_PKEY_METHOD_SIGNATURE,  
 	belt_hash_init,
 	belt_hash_update,
 	belt_hash_final,

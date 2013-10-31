@@ -1,9 +1,18 @@
+﻿/*
+*******************************************************************************
+\file btls_bign_pmeth.c
+\brief Управление ключами алгоритмов bign
+*******************************************************************************
+\author (С) Олег Соловей, Денис Веремейчик, http://apmi.bsu.by
+\created 2013.06.21
+\version 2013.10.21
+*******************************************************************************
+*/
+
 #include <ctype.h>
 #include "btls_bign.h"
 #include "btls_oids.h"
 #include "btls_utl.h"
-
-#include "bign128_suite.h"
 
 static int init_rng_stack(void *rng_stack) 
 {
@@ -25,7 +34,7 @@ static int init_rng_stack(void *rng_stack)
 /* Allocates new bign_pmeth_data structure and assigns it as data */
 static int pkey_bign_init(EVP_PKEY_CTX *ctx) 
 {
-	struct bign_pmeth_data *data;
+	struct bign_pmeth_data *data = NULL;
 	struct bign_key_data *bign_key;
 	int base_id;
 	EVP_PKEY *pkey;
@@ -50,7 +59,8 @@ static int pkey_bign_init(EVP_PKEY_CTX *ctx)
 		}
 	}
 
-	data->rng_stack = (unsigned char*) OPENSSL_malloc(brngCTRStackDeep());
+	data->param_nid = bign_prm1_nid;
+	data->rng_stack = (unsigned char*) OPENSSL_malloc(brngCTR_deep());
 	if (!data->rng_stack) return 0;
 	if (!init_rng_stack(data->rng_stack)) return 0;
 
@@ -78,7 +88,7 @@ static int pkey_bign_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
 
 	if (src_data->rng_stack)
 		dst_data->rng_stack = pstack;
-
+	
 	return 1;
 }
 
@@ -92,8 +102,9 @@ static void pkey_bign_cleanup(EVP_PKEY_CTX *ctx)
 	
 	if (data->rng_stack)
 	{
-		OPENSSL_cleanse(data->rng_stack, brngCTRStackDeep());
+		OPENSSL_cleanse(data->rng_stack, brngCTR_deep());
 		OPENSSL_free(data->rng_stack);
+		data->rng_stack = NULL;
 	}
 
 	memSetZero(data, sizeof(struct bign_pmeth_data));
@@ -188,22 +199,19 @@ int fill_bign_params(struct bign_key_data *key_data, int params_nid)
 	param_oid = NULL;
 	key_data->param_nid = params_nid;
 	if (key_data->param_nid == bign_prm1_nid) 
-	{
 		param_oid = OID_bign_prm1;
-	} 
-	status = bignStdParams(&key_data->params, param_oid);
-	if (status != ERR_SUCCESS) 
-	{
+	else 
 		return 0;
-	}
+	status = bignStdParams(&key_data->params, param_oid);
+	if (status != ERR_SUCCESS)  return 0;
 	
 	return 1;
 }
 
 static int pkey_bign_set_params(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey) 
 {
-	struct bign_pmeth_data *data;
-	struct bign_key_data *key_data;
+	struct bign_pmeth_data *data = NULL;
+	struct bign_key_data *key_data = NULL;
 	
 	data = (struct bign_pmeth_data *) EVP_PKEY_CTX_get_data(ctx);
 	if (!data) return 0;

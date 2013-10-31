@@ -1,15 +1,15 @@
-/*!
+﻿/*!
 *******************************************************************************
 \file btls_oids.h
-\brief Îèäû äëÿ ýíæàéíà btls 
+\brief Идентификаторы для алгоритмов встраиваемого модуля btls 
 *//****************************************************************************
-\author (Ñ) Îëåã Ñîëîâåé http://apmi.bsu.by
+\author (С) Олег Соловей, http://apmi.bsu.by
 \created 2013.05.14
 \version 2013.09.26
 *******************************************************************************
 */
-#ifndef BTLS_BELT_OIDS_H_
-#define BTLS_BELT_OIDS_H_
+#ifndef __BTLS_OIDS_H
+#define __BTLS_OIDS_H
 
 /* Defines description of belt-ecb256 */
 #define OID_belt_ecb "1.2.112.0.2.0.34.101.31.13"
@@ -32,8 +32,8 @@
 #define LN_belt_ctr "belt-ctr"
 
 #define OID_belt_stream OID_belt_ctr
-#define SN_belt_stream SN_belt_ctr
-#define LN_belt_stream LN_belt_ctr
+#define SN_belt_stream "belt-stream"
+#define LN_belt_stream "belt-stream"
 
 /* Defines description of belt-mac256 */
 #define OID_belt_mac "1.2.112.0.2.0.34.101.31.53"
@@ -53,11 +53,16 @@
 /* Defines bign algorithms */
 #define OID_bign "1.2.112.0.2.0.34.101.45.12"
 #define SN_bign "bign"
-#define LN_bign "bign-with-hbelt"
+#define LN_bign "bign"
 
 /* Defines description of bign params  bign-curve256  (l=128) */
 #define OID_bign_prm1 "1.2.112.0.2.0.34.101.45.3.1"
 #define SN_bign_prm1 "bign-curve256v1"
 #define LN_bign_prm1 "bign-curve256v1"
 
-#endif /* BTLS_BELT_OIDS_H_ */
+/* Defines description of bign pubkey */
+#define OID_bign_pubkey "1.2.112.0.2.0.34.101.45.2.1"
+#define SN_bign_pubkey "bign-pubkey"
+#define LN_bign_pubkey "bign-pubkey"
+
+#endif /* __BTLS_OIDS_H */

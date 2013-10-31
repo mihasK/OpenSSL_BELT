@@ -1,5 +1,16 @@
-#ifndef BTLS_UTL_H
-#define BTLS_UTL_H
+﻿/*!
+*******************************************************************************
+\file btls_utl.h
+\brief Определения для встраиваемого модуля btls 
+*//****************************************************************************
+\author (С) Олег Соловей, http://apmi.bsu.by
+\created 2013.05.14
+\version 2013.10.22
+*******************************************************************************
+*/
+
+#ifndef __BTLS_UTL_H
+#define __BTLS_UTL_H
 
 #include <string.h>
 #include <openssl/crypto.h>
@@ -27,9 +38,11 @@ extern EVP_PKEY_ASN1_METHOD *bign_ameth;
 #define pmeth_mac_nid pmeth_nids[0]
 #define pmeth_bign_nid pmeth_nids[1]
 
+#define EVP_PKEY_btls_assign(a,b,c) EVP_PKEY_assign(a,b,c)
+#define EVP_PKEY_btls_base_id(a) EVP_PKEY_base_id(a)
 
-int EVP_PKEY_btls_assign(EVP_PKEY *pkey,int type,void *key);
-int EVP_PKEY_btls_base_id(const EVP_PKEY *pkey);
+//int btls_change_оbj_data(ASN1_OBJECT **a, const char* pp);
+int btls_change_obj_data(ASN1_OBJECT **a, const char* pp);
 
-#endif
+#endif /* __BTLS_UTL_H */
 
