@@ -22,11 +22,11 @@
 #include "btls_err.h"
 #include "btls_engine.h"
 
-#ifdef _DEBUG
-#pragma comment(lib, "../bee2/win/debug32/bee2lib.lib") 
-#else
-#pragma comment(lib, "../bee2/win/release32/bee2lib.lib") 
-#endif
+//#ifdef _DEBUG
+//#pragma comment(lib, "../bee2/win/debug32/bee2lib.lib")
+//#else
+//#pragma comment(lib, "../bee2/win/release32/bee2lib.lib")
+//#endif
 
 static const char *engine_btls_id = "btls_e";
 static const char *engine_btls_name = "Reference implementation of btls-engine";
