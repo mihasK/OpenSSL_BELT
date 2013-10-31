@@ -45,7 +45,7 @@ EVP_PKEY_ASN1_METHOD *bign_ameth = NULL;
 
 #define REGISTER_NID(var, alg) tmpnid = OBJ_ln2nid(LN_##alg);\
 	var = (tmpnid == NID_undef)?\
-		OBJ_create(OID_##alg, _strdup(SN_##alg) , _strdup(LN_##alg)) : tmpnid;\
+		OBJ_create(OID_##alg, strdup(SN_##alg) , strdup(LN_##alg)) : tmpnid;\
 	if (var == NID_undef) { goto err;}
 
 static int register_NIDs() 
